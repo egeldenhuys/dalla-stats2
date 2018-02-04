@@ -1,0 +1,111 @@
+body{
+  background-color: black;
+  /* background-image: url(images/Dark-Wood-Textures-8-from-Webtreats.png); */
+  background-image: url(images/background.jpg);
+  background-size: cover;
+  background-position: center;
+  overflow-x: hidden;
+}
+h1, h2
+{
+  font-family: sans-serif;
+  text-shadow: 1px 1px 8px #000;
+  color: rgba(255,255,255,0.8);
+  text-align: center;
+}
+h2
+{
+  background-color: #5bc0de;
+  width: 100%;
+  margin: 0 auto;
+  padding: 5px;
+  font-size: 300%;
+}
+#text{
+  font-size: 140%;
+  color: white;
+  text-align: center;
+}
+#name
+{
+  font-size: 130%;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 10px;
+}
+#memebers
+{
+  margin-top: 30px;
+}
+#onPeak, #offPeak, #onPeakUser, #offPeakUser
+{
+  border: rgba(255, 255, 255, 0.8) solid 4px;
+  margin-top: 1px;
+}
+#heading, #footer, #person_info
+{
+  color: white;
+  font-size: 1100%;
+  text-align: center;
+}
+#average
+{
+  font-size: 10%;
+  color: rgba(255,255,255,0.5);
+}
+#footer, #person_info
+{
+  margin-top: 60px;
+  font-size: 280%;
+  color: rgba(255, 255, 255, 0.9);
+}
+.form-inline
+{
+  text-align: center;
+  width: 100%;
+}
+.form-control:hover
+{
+  background-color: black;
+}
+label
+{
+  font-size: 140%;
+  color: rgba(255, 255, 255, 0.9)
+}
+#home
+{
+  position: fixed;
+  top: 20px;
+  left: 0px;
+}
+#logout
+{
+  position: fixed;
+  top: 20px;
+  right: 0px;
+}
+.alert, #dropDown
+{
+  text-align: center;
+}
+#form
+{
+  width: 70%;
+  margin: 0 auto;
+}
+#daysTillPeak
+{
+  text-align: center;
+  font-size: 160%;
+  color: rgba(255,255,255,0.5);
+  margin-top: 20px;
+}
+#confirmPosition
+{
+  margin-top: 20px;
+}
+#passed
+{
+  font-size: 200%;
+}
