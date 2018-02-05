@@ -61,8 +61,7 @@ def main():
 
         except KeyboardInterrupt:
             logger.info('Exiting...', exc_info=False)
-            time.sleep(1)
-            exit_requested = True
+            return 0
 
         logger.info('Sleeping...')
         time.sleep(int(config['dalla_logger']['interval_minutes']) * 60)

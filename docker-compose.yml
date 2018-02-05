@@ -7,6 +7,14 @@ services:
     networks:
       - dalla_stats_network
 
+  web:
+    build: ./web-server
+    restart: always
+    networks:
+      - dalla_stats_network
+    ports:
+      - "80:80"
+
   db:
     image: mariadb
     ports:
