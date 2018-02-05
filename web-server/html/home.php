@@ -47,7 +47,7 @@
 
             $user = $_SESSION["logedIn"];
 
-            $sql = "SELECT ID FROM users WHERE ID != 'Unkown' AND ID != '$user'";
+            $sql = "SELECT username FROM person WHERE username != '$user'";
             $result = $conn->query($sql);
 
             if($result->num_rows > 0)

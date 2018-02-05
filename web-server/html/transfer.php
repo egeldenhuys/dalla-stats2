@@ -15,7 +15,7 @@
 
         echo $name . " " .$transfer ." ". $friend;
 
-        $sql = "SELECT on_peak FROM users WHERE ID = '$name' OR ID = '$friend'";
+        $sql = "SELECT on_peak FROM person WHERE username = '$name' OR username = '$friend'";
         $result = $conn->query($sql);
         if ($result)
         {
@@ -35,7 +35,7 @@
 
             // echo "<br />".round($friendsUsage,2).'<br />'.round($userUsage,2);
 
-            $sql = "UPDATE users SET on_peak = '$userUsage' WHERE ID = '$name'";
+            $sql = "UPDATE person SET on_peak = '$userUsage' WHERE username = '$name'";
             if ($conn->query($sql) === TRUE)
             {
 
@@ -44,7 +44,7 @@
             {
                 echo "Error: " . $sql . "<br>" . $conn->error;
             }
-            $sql = "UPDATE users SET on_peak = '$friendsUsage' WHERE ID = '$friend'";
+            $sql = "UPDATE person SET on_peak = '$friendsUsage' WHERE username = '$friend'";
             if ($conn->query($sql) === TRUE)
             {
 

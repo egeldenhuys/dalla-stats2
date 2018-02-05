@@ -87,7 +87,7 @@
   <?php
     $user = $_SESSION["name"];
 
-    $sql = "SELECT on_peak, off_peak FROM users WHERE ID = '$user'";
+    $sql = "SELECT on_peak, off_peak FROM person WHERE username = '$user'";
     $result = $conn->query($sql);
 
     if($result->num_rows > 0)

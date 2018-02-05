@@ -130,9 +130,16 @@ class DataProvider(object):
     def update_device_table(self, devices: Dict[str, DeviceRow]) -> None:
         """Update or insert devices"""
 
+        # TODO(egeldenhuys): Remove hardcode
+        total_on = 0
+        total_off = 0
+
         self.insert_into_device_table(devices)
 
         for mac, device in devices.items():
+            total_on += device.on_peak
+            total_off += device.off_peak
+
             if device.id != -1:
                 logger.debug('Updating device {0}'.format(device))
                 self.cursor.execute("""UPDATE {0}
@@ -150,6 +157,9 @@ class DataProvider(object):
                         device.off_peak,
                         self.dbm.device['id'],
                         device.id))
+
+        self.cursor.execute("""UPDATE person SET on_peak = %s, off_peak = %s
+                              WHERE id = 1""", (total_on, total_off))
 
         self.conn.commit()
 

@@ -55,7 +55,7 @@
                 again we switch from html to php when we want to access php variables
               -->
               <div id="name">
-                  <a href="user.php?name=<?php echo $row["ID"]; ?>"><?php echo $row["ID"]; ?></a>
+                  <a href="user.php?name=<?php echo $row["username"]; ?>"><?php echo $row["username"]; ?></a>
               </div>
               <!-- DESCRIPTION: id="name"
                  The order in which users appear is determined by this variable (ORDER BY was done in selectData())
