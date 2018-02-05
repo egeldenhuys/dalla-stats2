@@ -1,0 +1,27 @@
+version: '2'
+services:
+
+  logger:
+    build: ./logger
+    restart: always
+    networks:
+      - dalla_stats_network
+
+  db:
+    image: mariadb
+    ports:
+      - "3306:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ChangeThisPassword548765!srs
+    volumes:
+      - "./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql"
+      - "dalla_stats_volume:/var/lib/mysql"
+    networks:
+      - dalla_stats_network
+
+volumes:
+  dalla_stats_volume:
+
+networks:
+  dalla_stats_network:
