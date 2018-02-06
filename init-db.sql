@@ -26,6 +26,7 @@ CREATE TABLE device (
   total_bytes BIGINT,
   on_peak BIGINT,
   off_peak BIGINT,
+  description VARCHAR(255),
   PRIMARY KEY (id),
   FOREIGN KEY (person_id) REFERENCES person(id)
 );
