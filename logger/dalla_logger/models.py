@@ -4,42 +4,49 @@ from typing import Dict, List, Tuple
 class DeviceRow(object):
     """A model representing a device in the database"""
 
-    def __init__(self, id: int, mac_address: str, person_id: int,
-                 total_bytes: int, on_peak: int, off_peak: int) -> None:
-        self.id = id
+    def __init__(self, device_id: int, mac_address: str, person_id: int,
+                 total_bytes: int, on_peak: int, off_peak: int, delta: int = -1337) -> None:
+        self.device_id = device_id
         self.mac_address = mac_address
         self.person_id = person_id
         self.total_bytes: int = total_bytes
         self.on_peak = on_peak
         self.off_peak = off_peak
+        self.delta = delta
 
     def __str__(self):
         return 'DeviceRow: <[id={0}, mac_address={1}, person_id={2}, ' \
                'total_bytes={3}, ' \
-               'on_peak={4}, off_peak={5}]>'.format(
-                self.id, self.mac_address, self.person_id, self.total_bytes,
+               'on_peak={4}, off_peak={5} delta={6}]>'.format(
+                self.device_id, self.mac_address, self.person_id, self.total_bytes,
                 self.on_peak,
-                self.off_peak)
+                self.off_peak,
+                self.delta)
 
 
 class PersonRow(object):
     """A model representing a person in the database"""
 
-    def __init__(self, id: int, username: str, on_peak: int,
+    def __init__(self, person_id: int, on_peak: int,
                  off_peak: int) -> None:
-        self.id = id
-        self.username = username
+        self.person_id = person_id
         self.on_peak = on_peak
         self.off_peak = off_peak
+
+    def __str__(self):
+        return 'PersonRow: <[id={0}, on_peak={1}, off_peak={2}]>'.format(
+                self.person_id,
+                self.on_peak,
+                self.off_peak)
 
 
 class HistoryRow(object):
     """A row in the history table"""
 
-    def __init__(self, id: int, device_id: int, ip_address: str,
+    def __init__(self, history_id: int, device_id: int, ip_address: str,
                  record_time: int,
                  total_bytes: int) -> None:
-        self.id = id
+        self.history_id = history_id
         self.device_id = device_id
         self.ip_address = ip_address
         self.record_time = record_time
@@ -48,7 +55,7 @@ class HistoryRow(object):
     def __str__(self):
         return 'HistoryRow: <[id={0}, device_id={1}, ip_address={2}, ' \
                'total_bytes={3}]>'.format(
-                self.id, self.device_id, self.ip_address, self.total_bytes)
+                self.history_id, self.device_id, self.ip_address, self.total_bytes)
 
 
 class DatabaseMap(object):

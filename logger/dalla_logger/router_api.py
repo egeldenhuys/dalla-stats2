@@ -18,6 +18,13 @@ class DeviceInfo(object):
         self.record_time = timestamp
         self.total_bytes = total_bytes
 
+    def __str__(self):
+        return 'DeviceInfo: <[mac_address={0}, ip_address={1}, record_time={2}, total_bytes={3}]>'.format(
+                self.mac_address,
+                self.ip_address,
+                self.record_time,
+            self.total_bytes)
+
 
 def init_session(router_ip, username, password):
     """Create a new authenticated session for admin requests"""

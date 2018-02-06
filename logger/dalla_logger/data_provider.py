@@ -5,7 +5,8 @@ import copy
 from typing import List, Dict, Tuple
 from datetime import datetime
 
-from models import DeviceRow, HistoryRow, DatabaseMap
+from models import DeviceRow, HistoryRow, DatabaseMap, PersonRow
+
 from router_api import DeviceInfo
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ class DataProvider(object):
         result: List[Tuple[str, int, int, int, int]] = list()
 
         for mac, device in devices.items():
-            if device.id == -1:
+            if device.device_id == -1:
                 result.append((
                     device.mac_address,
                     device.person_id,
@@ -82,7 +83,7 @@ class DataProvider(object):
         return result
 
     def insert_into_device_table(self, devices: Dict[str, DeviceRow]):
-        """Insert the given device rows into the device table
+        """Insert new devices into the device table
 
         Only inserts if the id == -1
         """
@@ -96,18 +97,18 @@ class DataProvider(object):
 
         flat: List[
             Tuple[str, int, int, int, int]] = self.flatten_device_rows_exclude(
-                devices)
+            devices)
 
         self.cursor.executemany("""INSERT INTO {0} ({1}, {2}, {3}, {4}, {5})
                             VALUES (%s, %s, %s, %s, %s)"""
             .format(
-                self.dbm.device['table_name'],
-                self.dbm.device['mac_address'],
-                self.dbm.device['person_id'],
-                self.dbm.device['total_bytes'],
-                self.dbm.device['on_peak'],
-                self.dbm.device['off_peak']),
-                flat)
+            self.dbm.device['table_name'],
+            self.dbm.device['mac_address'],
+            self.dbm.device['person_id'],
+            self.dbm.device['total_bytes'],
+            self.dbm.device['on_peak'],
+            self.dbm.device['off_peak']),
+            flat)
 
         self.conn.commit()
 
@@ -117,7 +118,6 @@ class DataProvider(object):
 
         Ids are set to -1
         """
-
         device_rows: Dict[str, DeviceRow] = dict()
 
         for mac in devices:
@@ -126,53 +126,165 @@ class DataProvider(object):
 
         return device_rows
 
-    def update_device_table(self, devices: Dict[str, DeviceRow]) -> None:
-        """Update or insert devices"""
+    def get_person_rows(self, devices: Dict[str, DeviceRow]) -> Dict[str, PersonRow]:
+        """Get the users relating to the devices"""
+        logger.debug('Getting person rows...')
 
-        # TODO(egeldenhuys): Remove hardcode
-        total_on = 0
-        total_off = 0
+        user_ids_raw: List[int] = list()
+
+        for mac, device in devices.items():
+            user_ids_raw.append(device.person_id)
+
+        user_ids: List[str] = ['"{0}"'.format(user_id) for user_id in list(user_ids_raw)]
+
+        self.cursor.execute(
+            """SELECT {0}, {1}, {2} FROM {3} WHERE {4} IN 
+            ({5})"""
+                .format(self.dbm.person['id'],
+                        self.dbm.person['on_peak'],
+                        self.dbm.person['off_peak'],
+                        self.dbm.person['table_name'],
+                        self.dbm.person['id'],
+                        ', '.join(user_ids)))
+
+        results = self.cursor.fetchall()
+
+        person_rows: Dict[int, PersonRow] = dict()
+
+        logger.debug('Persons found')
+        for row in results:
+            person_rows[int(row[0])] = PersonRow(person_id=row[0], on_peak=row[1], off_peak=row[2])
+            logger.debug(person_rows[int(row[0])])
+
+        return person_rows
+
+    def flatten_person_rows(self, person_rows: Dict[int, PersonRow]) -> \
+            List[Tuple[int, int, int]]:
+        """Returns a 2D array
+
+            0: on_peak
+            1: off_peak
+            2: id
+        """
+
+        result: List[Tuple[int, int, int]] = list()
+
+        for person_id, person in person_rows.items():
+            result.append((
+                person.on_peak,
+                person.off_peak,
+                person.person_id
+            ))
+
+        return result
+
+    def update_person_table_force(self) -> None:
+        """Update the user table by adding up all device values for each user"""
+        logger.debug('Force updating the person table')
+        devices: Dict[str, DeviceRow] = self.get_all_device_rows()
+        persons: Dict[int, PersonRow] = dict()
+
+        for mac, device in devices.items():
+
+            if device.person_id not in persons:
+                persons[device.person_id] = PersonRow(person_id=device.person_id, on_peak=0, off_peak=0)
+
+            persons[device.person_id].on_peak += device.on_peak
+            persons[device.person_id].off_peak += device.off_peak
+
+        logger.debug('New rows:')
+        for person_id, person in persons.items():
+            logger.debug(person)
+
+        flat_persons: List[Tuple[int, int, int]] = self.flatten_person_rows(persons)
+        self.update_person_table_flat_rows(flat_persons)
+
+    def update_person_table_flat_rows(self, flat_persons: List[Tuple[int, int, int]]) -> None:
+        """Update the user table from flat user rows
+
+        0: on_peak
+        1: off_peak
+        2: id
+        """
+        logger.debug('Updating person table from flat row')
+        self.cursor.executemany("""UPDATE {0}
+                                SET {1} = %s, {2} = %s
+                                WHERE {3} = %s"""
+            .format(
+            self.dbm.person['table_name'],
+            self.dbm.person['on_peak'],
+            self.dbm.person['off_peak'],
+            self.dbm.person['id']),
+            flat_persons)
+
+        self.conn.commit()
+
+    def update_person_table(self, devices: Dict[str, DeviceRow]) -> None:
+        """Update the user table using the device deltas"""
+        logger.debug('Updating person table...')
+
+        person_rows: Dict[int, PersonRow] = self.get_person_rows(devices)
+
+        for mac, device in devices.items():
+            if not device.person_id in person_rows:
+                logger.error('Found a device that has no fetched user')
+
+            time_utc = datetime.utcnow()
+            if 22 <= time_utc.hour < 4:
+                logger.debug(
+                    'Adding {0} to off_peak for person id {1}'.format(device.delta, person_rows[device.person_id]))
+                person_rows[device.person_id].off_peak += device.delta
+            else:
+                logger.debug(
+                    'Adding {0} to on_peak for person id {1}'.format(device.delta, person_rows[device.person_id]))
+                person_rows[device.person_id].on_peak += device.delta
+
+        flat_persons: List[Tuple[int, int, int]] = self.flatten_person_rows(person_rows)
+
+        for flattie in flat_persons:
+            logger.debug('Flattie: {0}'.format(flattie))
+
+        self.update_person_table_flat_rows(flat_persons)
+
+    def update_device_table(self, devices: Dict[str, DeviceRow]) -> None:
+        """Update or insert devices while updating the on and off peak values from the delta"""
 
         self.insert_into_device_table(devices)
 
         for mac, device in devices.items():
-            total_on += device.on_peak
-            total_off += device.off_peak
+            if device.delta < 0:
+                logger.error('Negative delta found while inserting into device table. Delta has not been calculated!')
 
-            if device.id != -1:
+            time_utc = datetime.utcnow()
+            if 22 <= time_utc.hour < 4:
+                device.off_peak += device.delta
+            else:
+                device.on_peak += device.delta
+
+            if device.device_id != -1:
                 logger.debug('Updating device {0}'.format(device))
                 self.cursor.execute("""UPDATE {0}
                                     SET {1} = {2}, {3} = {4}, {5} = {6}, 
                                     {7} = {8}
                                     WHERE {9} = {10}""".format(
-                        self.dbm.device['table_name'],
-                        self.dbm.device['person_id'],
-                        device.person_id,
-                        self.dbm.device['total_bytes'],
-                        device.total_bytes,
-                        self.dbm.device['on_peak'],
-                        device.on_peak,
-                        self.dbm.device['off_peak'],
-                        device.off_peak,
-                        self.dbm.device['id'],
-                        device.id))
-
-        self.cursor.execute("""UPDATE person SET on_peak = %s, off_peak = %s
-                              WHERE id = 1""", (total_on, total_off))
+                    self.dbm.device['table_name'],
+                    self.dbm.device['person_id'],
+                    device.person_id,
+                    self.dbm.device['total_bytes'],
+                    device.total_bytes,
+                    self.dbm.device['on_peak'],
+                    device.on_peak,
+                    self.dbm.device['off_peak'],
+                    device.off_peak,
+                    self.dbm.device['id'],
+                    device.device_id))
 
         self.conn.commit()
 
     def calculate_deltas(self, devices_old: Dict[str, DeviceRow],
                          devices_new: Dict[str, DeviceRow]) -> Dict[
         str, DeviceRow]:
-        """Calculate the on peak and off peaks using the current time
-
-        If new is not in old, we do not care
-        New always needs to be in result
-        Returns:
-            Dict with the updated on and off peak with the total bytes of
-            devices_new
-            """
+        """Calculate the device deltas and set the .delta attribute"""
         result: Dict[str, DeviceRow] = dict()
 
         for mac in devices_new:
@@ -191,16 +303,37 @@ class DataProvider(object):
                     delta = result[mac].total_bytes
                     logger.warning('Correcting to {0}'.format(delta))
 
-            time_utc = datetime.utcnow()
-            # 22 UTC = 0h SAST
-            # 4 UTC = 6h SAST
-            logger.debug('Hour = {0}'.format(time_utc.hour))
-            if 22 <= time_utc.hour < 4:
-                result[mac].off_peak += delta
-            else:
-                result[mac].on_peak += delta
+                result[mac].delta = delta
 
         return result
+
+    def get_all_device_rows(self) -> Dict[str, DeviceRow]:
+        """Fetch all device rows"""
+        logger.debug('Fetching all devices...')
+        # TODO(egeldenhuys): Change method if large number of devices
+
+        self.cursor.execute(
+            """SELECT {0}, {1}, {2}, {3}, {4}, {5} FROM {6}"""
+                .format(self.dbm.device['id'],
+                        self.dbm.device['mac_address'],
+                        self.dbm.device['person_id'],
+                        self.dbm.device['total_bytes'],
+                        self.dbm.device['on_peak'],
+                        self.dbm.device['off_peak'],
+                        self.dbm.device['table_name'],
+                        self.dbm.device['mac_address']))
+
+        results = self.cursor.fetchall()
+
+        db_devices: Dict[str, DeviceRow] = dict()
+
+        logger.debug('Devices found:')
+        for row in results:
+            db_devices[row[1]] = DeviceRow(row[0], row[1], row[2], row[3],
+                                           row[4], row[5])
+            logger.debug(db_devices[row[1]])
+
+        return db_devices
 
     def get_device_rows(self, devices: Dict[str, DeviceInfo]) -> Dict[
         str, DeviceRow]:
@@ -218,17 +351,17 @@ class DataProvider(object):
                                 list(devices.keys())]
 
         self.cursor.execute(
-                """SELECT {0}, {1}, {2}, {3}, {4}, {5} FROM {6} WHERE {7} IN 
-                ({8})"""
-                    .format(self.dbm.device['id'],
-                            self.dbm.device['mac_address'],
-                            self.dbm.device['person_id'],
-                            self.dbm.device['total_bytes'],
-                            self.dbm.device['on_peak'],
-                            self.dbm.device['off_peak'],
-                            self.dbm.device['table_name'],
-                            self.dbm.device['mac_address'],
-                            ', '.join(macs_info)))
+            """SELECT {0}, {1}, {2}, {3}, {4}, {5} FROM {6} WHERE {7} IN 
+            ({8})"""
+                .format(self.dbm.device['id'],
+                        self.dbm.device['mac_address'],
+                        self.dbm.device['person_id'],
+                        self.dbm.device['total_bytes'],
+                        self.dbm.device['on_peak'],
+                        self.dbm.device['off_peak'],
+                        self.dbm.device['table_name'],
+                        self.dbm.device['mac_address'],
+                        ', '.join(macs_info)))
 
         results = self.cursor.fetchall()
 
@@ -266,7 +399,7 @@ class DataProvider(object):
         result: List[Tuple[int, str, int, int]] = list()
 
         for mac, device in devices.items():
-            if device.id == -1:
+            if device.history_id == -1:
                 result.append((
                     device.device_id,
                     device.ip_address,
@@ -294,12 +427,12 @@ class DataProvider(object):
         self.cursor.executemany("""INSERT INTO {0} ({1}, {2}, {3}, {4})
                                    VALUES (%s, %s, %s, %s)"""
             .format(
-                self.dbm.history['table_name'],
-                self.dbm.history['device_id'],
-                self.dbm.history['ip_address'],
-                self.dbm.history['record_time'],
-                self.dbm.history['total_bytes']),
-                flat)
+            self.dbm.history['table_name'],
+            self.dbm.history['device_id'],
+            self.dbm.history['ip_address'],
+            self.dbm.history['record_time'],
+            self.dbm.history['total_bytes']),
+            flat)
 
         self.conn.commit()
 
@@ -308,11 +441,11 @@ class DataProvider(object):
 
         devices_db: Dict[str, DeviceRow] = self.get_device_rows(devices)
         history_rows: Dict[str, HistoryRow] = self.convert_to_history_rows(
-                devices)
+            devices)
 
         for mac, device in devices_db.items():
             if mac in history_rows:
-                history_rows[mac].device_id = device.id
+                history_rows[mac].device_id = device.device_id
 
         self.insert_into_history_table(history_rows)
 
@@ -328,4 +461,5 @@ class DataProvider(object):
         devices_new: Dict[str, DeviceRow] = self.convert_to_device_row(devices)
         devices_delta = self.calculate_deltas(devices_old, devices_new)
         self.update_device_table(devices_delta)
+        self.update_person_table_force()
         self.update_history_table(devices)
