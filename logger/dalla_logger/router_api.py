@@ -57,14 +57,6 @@ def init_session(router_ip, username, password):
     return session
 
 
-def get_current_time():
-    """pass"""
-    time_key = int(time.time())  # UTC TIME!
-    local_time_formatted = time.strftime('%Y-%M-%d %H:%m:%S',
-                                         time.localtime(time_key))
-    return local_time_formatted
-
-
 def logout(session):
     """Logout using the given session"""
     logger.debug('Sending logout request to router')
@@ -80,16 +72,15 @@ def logout(session):
         raise
 
     if response.text != '[cgi]0\n[error]0':
-        print('[{0}] [ERROR] Logout failed:'.format(get_current_time()))
+        logger.error('Logout failed')
 
         if (response.text == '<html><head><title>500 Internal Server '
                              'Error</title></head><body><center><h1>500 '
                              'Internal '
                              'Server Error</h1></center></body></html>'):
-            print('[{0}] Another admin has logged in!'.format(
-                get_current_time()))
+            logger.error('Another admin has logged in!')
         else:
-            print('\t' + response.text)
+            logger.error(response.text)
 
 
 def dec_str_to_ip_str(dec):
@@ -164,15 +155,12 @@ def get_device_records(session) -> Dict[str, DeviceInfo]:
     error = raw_stats.split('\n')
 
     if error[-1] != '[error]0':
-        print('[{0}] [ERROR] Failed to get device records from router!'.format(
-            get_current_time()))
+        logger.error('Failed to get device records from router!')
         if (response.text == '<html><head><title>500 Internal Server '
                              'Error</title></head><body><center><h1>500 '
                              'Internal '
                              'Server Error</h1></center></body></html>'):
-            print('[{0}] Another admin has logged in!'.format(
-                get_current_time()))
-            logger.error('Also check the router password')
+            logger.error('Another admin has logged in or incorrect password')
         else:
             print('  ' + response.text)
 

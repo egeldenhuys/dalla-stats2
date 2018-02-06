@@ -2,9 +2,8 @@ import logging
 import MySQLdb
 import time
 import copy
-import sys
-
 from typing import List, Dict, Tuple
+from datetime import datetime
 
 from models import DeviceRow, HistoryRow, DatabaseMap
 from router_api import DeviceInfo
@@ -192,9 +191,11 @@ class DataProvider(object):
                     delta = result[mac].total_bytes
                     logger.warning('Correcting to {0}'.format(delta))
 
-            local_time = time.localtime(time.time())
-
-            if local_time.tm_hour < 6:
+            time_utc = datetime.utcnow()
+            # 22 UTC = 0h SAST
+            # 4 UTC = 6h SAST
+            logger.debug('Hour = {0}'.format(time_utc.hour))
+            if 22 <= time_utc.hour < 4:
                 result[mac].off_peak += delta
             else:
                 result[mac].on_peak += delta
