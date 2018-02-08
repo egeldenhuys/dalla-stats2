@@ -22,7 +22,6 @@ def print_usage():
 
 def main():
     print('Starting Trigger-Update...')
-    time.sleep(1) # To prevent breaking of docker-compose output
 
     exit_requested: bool = False
 
@@ -43,7 +42,9 @@ def main():
 
     if not data_provider.is_connected():
         logger.error('Could not connect to database')
-        logger.error('EXITING...')
+        logger.error('Exiting in 5 seconds...')
+        time.sleep(5)
+        logger.error('EXITING')
         return 1
 
     router_session = router_api.init_session(config['router']['host'],

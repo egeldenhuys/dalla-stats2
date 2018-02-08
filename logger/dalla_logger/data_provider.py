@@ -256,7 +256,12 @@ class DataProvider(object):
                 logger.error('Negative delta found while inserting into device table. Delta has not been calculated!')
 
             time_utc = datetime.utcnow()
-            if 22 <= time_utc.hour < 4:
+            # Off peak hours
+            # +2 (SAST)
+            # 0,   1, 2, 3, 4, 5
+            # (UTC)
+            # 22, 23, 0, 1, 2, 3
+            if 22 <= time_utc.hour or time_utc.hour <= 3:
                 device.off_peak += device.delta
             else:
                 device.on_peak += device.delta
@@ -289,7 +294,8 @@ class DataProvider(object):
 
         for mac in devices_new:
             result[mac] = copy.deepcopy(devices_new[mac])
-            delta: int = result[mac].total_bytes  # default delta
+            # Since we cannot assume the on or off peak, we set delta to 0
+            delta: int = 0
 
             if mac in devices_old:
                 result[mac] = copy.deepcopy(devices_old[mac])
@@ -303,7 +309,7 @@ class DataProvider(object):
                     delta = result[mac].total_bytes
                     logger.warning('Correcting to {0}'.format(delta))
 
-                result[mac].delta = delta
+            result[mac].delta = delta
 
         return result
 
