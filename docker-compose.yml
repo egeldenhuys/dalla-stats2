@@ -11,7 +11,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.hostname == leonidas
+          - node.hostname == atticus
 
   ui:
     image: egeldenhuys/dalla-stats-ui:latest
@@ -23,7 +23,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.hostname == leonidas
+          - node.hostname == atticus
 
   db:
     image: egeldenhuys/dalla-stats-db:latest
@@ -39,7 +39,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.hostname == leonidas
+          - node.hostname == atticus
 
 volumes:
   dalla_stats_data:
