@@ -8,6 +8,10 @@ services:
       - dalla_stats_network
     secrets:
       - dalla_logger_config
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == leonidas
 
   ui:
     image: egeldenhuys/dalla-stats-ui:latest
@@ -16,6 +20,10 @@ services:
       - dalla_stats_network
     ports:
       - "9000:80"
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == leonidas
 
   db:
     image: egeldenhuys/dalla-stats-db:latest
@@ -28,6 +36,10 @@ services:
       - dalla_stats_network
     secrets:
       - mysql_root_password
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == leonidas
 
 volumes:
   dalla_stats_data:
