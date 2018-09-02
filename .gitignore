@@ -101,3 +101,4 @@ ENV/
 .mypy_cache/
 
 config.local.ini
+mysql_root_password.txt

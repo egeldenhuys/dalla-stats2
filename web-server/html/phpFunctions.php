@@ -5,7 +5,7 @@ function connect()
 {
   $servername = "db";
   $username = "dalla";
-  $password = "example";
+  $password = "password";
   $db = "dalla_stats";
 
   $conn = new mysqli($servername, $username, $password, $db);

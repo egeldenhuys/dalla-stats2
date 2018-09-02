@@ -3,3 +3,4 @@ Dockerfile
 Pipfile
 Pipfile.lock
 init-db.sql
+config.ini

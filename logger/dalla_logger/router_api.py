@@ -136,7 +136,7 @@ def get_device_records(session) -> Dict[str, DeviceInfo]:
     These records need to be compared to a previous set to calculate the
     Delta
     """
-
+    
     logger.debug('Getting device records from router')
     # Configure page specific headers
     url = 'http://%s/cgi?1&5' % session.headers['Host']

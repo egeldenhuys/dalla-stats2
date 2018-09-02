@@ -1,35 +1,42 @@
-version: '2'
+version: '3.2'
+
 services:
 
   logger:
-    build: ./logger
-    restart: always
+    image: 127.0.0.1:5000/dalla-stats-logger:local
     networks:
       - dalla_stats_network
+    volumes:
+      - "./config.local.ini:/code/config.local.ini"
 
-  web:
-    build: ./web-server
+  ui:
+    image: 127.0.0.1:5000/dalla-stats-ui:local
     restart: always
     networks:
       - dalla_stats_network
     ports:
-      - "80:80"
+      - "9000:80"
 
   db:
     image: mariadb
-    ports:
-      - "3306:3306"
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ChangeThisPassword548765!srs
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
     volumes:
       - "./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql"
-      - "dalla_stats_volume:/var/lib/mysql"
+      - "dalla_stats_data:/var/lib/mysql"
     networks:
       - dalla_stats_network
+    secrets:
+      - mysql_root_password
 
 volumes:
-  dalla_stats_volume:
+  dalla_stats_data:
+    external: true
 
 networks:
   dalla_stats_network:
+
+secrets:
+  mysql_root_password:
+    file: mysql_root_password.txt

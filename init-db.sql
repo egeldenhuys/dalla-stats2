@@ -1,7 +1,7 @@
 CREATE DATABASE dalla_stats;
 
 CREATE USER 'dalla'@'%'
-  IDENTIFIED BY 'example';
+  IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON dalla_stats.* TO 'dalla'@'%';
 
 USE dalla_stats;
