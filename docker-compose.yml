@@ -3,14 +3,14 @@ version: '3.2'
 services:
 
   logger:
-    image: 127.0.0.1:5000/dalla-stats-logger:local
+    image: egeldenhuys/dalla-stats-logger:latest
     networks:
       - dalla_stats_network
-    volumes:
-      - "./config.local.ini:/code/config.local.ini"
+    secrets:
+      - dalla_logger_config
 
   ui:
-    image: 127.0.0.1:5000/dalla-stats-ui:local
+    image: egeldenhuys/dalla-stats-ui:latest
     restart: always
     networks:
       - dalla_stats_network
@@ -18,12 +18,11 @@ services:
       - "9000:80"
 
   db:
-    image: mariadb
+    image: egeldenhuys/dalla-stats-db:latest
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
     volumes:
-      - "./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql"
       - "dalla_stats_data:/var/lib/mysql"
     networks:
       - dalla_stats_network
@@ -40,3 +39,5 @@ networks:
 secrets:
   mysql_root_password:
     file: mysql_root_password.txt
+  dalla_logger_config:
+    file: config.local.ini
