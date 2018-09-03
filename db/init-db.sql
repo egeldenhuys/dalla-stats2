@@ -8,9 +8,9 @@ USE dalla_stats;
 
 CREATE TABLE person (
   id INT NOT NULL AUTO_INCREMENT,
-  username VARCHAR(255) NOT NULL UNIQUE,
-  password_hash VARCHAR(255),
-  password_salt VARCHAR(255),
+  username VARCHAR(64) NOT NULL UNIQUE,
+  password_hash VARCHAR(64),
+  password_salt VARCHAR(64),
   on_peak BIGINT,
   off_peak BIGINT,
   PRIMARY KEY (id)
