@@ -3,7 +3,7 @@ version: '3.2'
 services:
 
   logger:
-    image: egeldenhuys/dalla-stats-logger:latest
+    image: egeldenhuys/dalla-stats-logger:arm32v7
     restart: always
     networks:
       - dalla_stats_network
@@ -15,7 +15,7 @@ services:
           - node.hostname == sherlock
 
   ui:
-    image: egeldenhuys/dalla-stats-ui:latest
+    image: egeldenhuys/dalla-stats-ui:arm32v7
     restart: always
     networks:
       - dalla_stats_network
