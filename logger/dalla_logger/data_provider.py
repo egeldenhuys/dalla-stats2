@@ -32,6 +32,67 @@ class DataProvider(object):
         except MySQLdb.OperationalError:
             logging.error('Cannot connect to database at %s' % host,
                           exc_info=False)
+        
+        self.create_database_schema()
+
+    def create_database_schema(self):
+        logger.info('Creating database schema...')
+
+        if not self.is_connected():
+            logger.error('Cannot create database schema. No connection to database.')
+            return
+
+        # Copy and pasted from init-db.sql
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS person (
+            id INT NOT NULL AUTO_INCREMENT,
+            username VARCHAR(64) NOT NULL UNIQUE,
+            password_hash VARCHAR(64),
+            password_salt VARCHAR(64),
+            on_peak BIGINT,
+            off_peak BIGINT,
+            PRIMARY KEY (id)
+            )
+            """
+        )
+
+        self.cursor.execute(
+            """
+            INSERT IGNORE INTO person (id, username, password_hash, password_salt, on_peak, off_peak)
+            VALUES(1, 'Unknown', 'NO_LOGIN', 'NO_LOGIN', 0, 0)
+            """
+        )
+
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS device (
+            id INT NOT NULL AUTO_INCREMENT,
+            mac_address CHAR(17) NOT NULL UNIQUE ,
+            person_id INT NOT NULL,
+            total_bytes BIGINT,
+            on_peak BIGINT,
+            off_peak BIGINT,
+            description VARCHAR(255),
+            PRIMARY KEY (id),
+            FOREIGN KEY (person_id) REFERENCES person(id)
+            )
+            """
+        )
+
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS history (
+            id INT NOT NULL AUTO_INCREMENT,
+            device_id INT NOT NULL,
+            ip_address VARCHAR(15),
+            record_time INT NOT NULL,
+            total_bytes BIGINT NOT NULL,
+            PRIMARY KEY (id),
+            FOREIGN KEY (device_id) REFERENCES device(id)
+            )
+            """
+        )
 
     def __del__(self):
         try:
