@@ -3,4 +3,4 @@ Description=Export dalla-stats database
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/dalla-stats/backup.sh
+ExecStart=/usr/local/dalla-stats2/backup.sh
