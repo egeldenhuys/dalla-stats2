@@ -1,0 +1,6 @@
+[Unit]
+Description=Export dalla-stats database
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/dalla-stats/backup.sh
